@@ -1,10 +1,13 @@
 package br.com.alura.AluraFake.course;
 
+import br.com.alura.AluraFake.task.Task;
 import br.com.alura.AluraFake.user.User;
 import jakarta.persistence.*;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Course {
@@ -21,8 +24,13 @@ public class Course {
     private Status status;
     private LocalDateTime publishedAt;
 
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderInCourse ASC")
+    private List<Task> tasks = new ArrayList<>();
+
     @Deprecated
-    public Course(){}
+    public Course() {
+    }
 
     public Course(String title, String description, User instructor) {
         Assert.isTrue(instructor.isInstructor(), "Usuario deve ser um instrutor");
@@ -30,6 +38,20 @@ public class Course {
         this.instructor = instructor;
         this.description = description;
         this.status = Status.BUILDING;
+    }
+
+    public void addTask(Task newTask) {
+        if (status != Status.BUILDING)
+            throw new IllegalArgumentException("Apenas cursos em construção podem receber tarefas");
+        boolean duplicateStatement = tasks.stream()
+                .anyMatch(t -> t.getStatement().equalsIgnoreCase(newTask.getStatement()));
+        if (duplicateStatement)
+            throw new IllegalArgumentException("Curso já contém uma tarefa com este enunciado");
+        int newOrder = newTask.getOrderInCourse();
+        if (newOrder <= 0)
+            throw new IllegalArgumentException("Ordem deve ser positiva");
+        newTask.attachTo(this);
+        tasks.add(newTask);
     }
 
     public Long getId() {
