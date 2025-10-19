@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/task/new")
 public class TaskController {
@@ -33,9 +35,21 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/task/new/singlechoice")
-    public ResponseEntity newSingleChoice() {
-        return ResponseEntity.ok().build();
+    @PostMapping("singlechoice")
+    public ResponseEntity newSingleChoice(@RequestBody @Valid SingleChoiceTaskRequest request) {
+        Course course = repository.findById(request.courseId())
+                .orElseThrow(() -> new IllegalArgumentException("Curso não encontrado"));
+        validateCourseStatus(course);
+
+        List<Option> options = request.options()
+                .stream()
+                .map(o -> new Option(o.option(), o.isCorrect()))
+                .toList();
+
+        course.addTask(new SingleChoiceTask(request.statement(), request.order(), options));
+        repository.save(course);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/task/new/multiplechoice")
