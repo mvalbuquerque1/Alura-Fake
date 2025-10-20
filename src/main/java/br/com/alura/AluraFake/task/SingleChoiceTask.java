@@ -26,7 +26,7 @@ public class SingleChoiceTask extends Task {
 
     private void validateOptions(List<Option> options, String statement) {
         if (options == null || options.size() < 2 || options.size() > 5)
-            throw new IllegalArgumentException("A atividade deve ter entre 2 e 5 opcoes.");
+            throw new IllegalArgumentException("A atividade deve ter entre 2 e 5 opções.");
         long correctOption = options.stream().filter(Option::isCorrect).count();
         if (correctOption != 1)
             throw new IllegalArgumentException("A atividade deve ter apenas uma alternativa correta.");
