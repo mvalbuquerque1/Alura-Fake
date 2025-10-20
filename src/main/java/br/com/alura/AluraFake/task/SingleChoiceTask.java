@@ -29,7 +29,7 @@ public class SingleChoiceTask extends Task {
             throw new IllegalArgumentException("A atividade deve ter entre 2 e 5 opcoes.");
         long correctOption = options.stream().filter(Option::isCorrect).count();
         if (correctOption != 1)
-            throw new IllegalArgumentException("A atividade deve ter apenas uma alteranativa correta.");
+            throw new IllegalArgumentException("A atividade deve ter apenas uma alternativa correta.");
 
         Set<String> texts = options.stream().map(Option::getText).map(String::toLowerCase).collect(Collectors.toSet());
         if (texts.size() != options.size())
