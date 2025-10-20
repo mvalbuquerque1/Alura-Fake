@@ -1,5 +1,8 @@
 package br.com.alura.AluraFake.course;
 
+import br.com.alura.AluraFake.task.MultipleChoiceTask;
+import br.com.alura.AluraFake.task.OpenTextTask;
+import br.com.alura.AluraFake.task.SingleChoiceTask;
 import br.com.alura.AluraFake.task.Task;
 import br.com.alura.AluraFake.user.User;
 import jakarta.persistence.*;
@@ -58,6 +61,34 @@ public class Course {
         newTask.attachTo(this);
         tasks.add(newTask);
         tasks.sort(Comparator.comparingInt(Task::getOrderInCourse));
+    }
+
+    public void publishCourse() {
+        validatePublishPreconditions();
+
+        this.status = Status.PUBLISHED;
+        this.publishedAt = LocalDateTime.now();
+    }
+
+    private void validatePublishPreconditions() {
+        if (status != Status.BUILDING)
+            throw new IllegalArgumentException("Curso deve estar em estado BUILDING para ser publicado");
+
+        if (tasks == null || tasks.isEmpty())
+            throw new IllegalArgumentException("Curso deve conter ao menos uma tarefa para ser publicado");
+
+        boolean hasOpen = tasks.stream().anyMatch(t -> t instanceof OpenTextTask);
+        boolean hasSingle = tasks.stream().anyMatch(t -> t instanceof SingleChoiceTask);
+        boolean hasMulti = tasks.stream().anyMatch(t -> t instanceof MultipleChoiceTask);
+        if (!(hasOpen && hasSingle && hasMulti))
+            throw new IllegalArgumentException("Curso deve conter ao menos uma tarefa de cada tipo para ser publicado");
+
+        var orders = tasks.stream().map(Task::getOrderInCourse).sorted().toList();
+        for (int i = 0; i < orders.size(); i++) {
+            int expected = i + 1;
+            if (orders.get(i) != expected)
+                throw new IllegalArgumentException("Ordem das tarefas deve ser sequencial");
+        }
     }
 
     public Long getId() {
