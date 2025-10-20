@@ -33,7 +33,7 @@ public final class CourseTaskValidator {
                 .orElse(0);
 
         if (newOrder > maxOrder + 1)
-            throw new IllegalArgumentException("Sequencia deve ser continua");
+            throw new IllegalArgumentException("Sequência deve ser contínua");
     }
 }
 
