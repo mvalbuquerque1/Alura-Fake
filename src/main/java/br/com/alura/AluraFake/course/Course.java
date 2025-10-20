@@ -67,7 +67,7 @@ public class Course {
         validatePublishPreconditions();
 
         this.status = Status.PUBLISHED;
-        this.publishedAt = LocalDateTime.now(); // or Instant.now() if you change type
+        this.publishedAt = LocalDateTime.now();
     }
 
     private void validatePublishPreconditions() {
