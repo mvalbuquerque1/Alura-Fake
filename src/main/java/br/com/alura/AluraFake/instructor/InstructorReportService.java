@@ -23,7 +23,7 @@ public class InstructorReportService {
                 .orElseThrow(() -> new NoSuchElementException("Instrutor não encontrado"));
 
         if (!user.isInstructor()) {
-            throw new IllegalArgumentException("Usuario nao é um instrutor");
+            throw new IllegalArgumentException("Usuario não é um instrutor");
         }
 
         var courses = courseRepository.findAll().stream()
