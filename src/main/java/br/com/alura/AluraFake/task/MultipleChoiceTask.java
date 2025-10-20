@@ -27,7 +27,7 @@ public class MultipleChoiceTask extends Task {
 
     private void validateOptions(List<Option> options, String statement) {
         if (options == null || options.size() < 3 || options.size() > 5)
-            throw new IllegalArgumentException("A atividade deve ter entre 3 e 5 alternativas: ");
+            throw new IllegalArgumentException("A atividade deve ter entre 3 e 5 alternativas.");
 
         long correctOptions = options.stream().filter(Option::isCorrect).count();
         long incorrect = options.size() - correctOptions;
