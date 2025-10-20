@@ -99,7 +99,7 @@ class CourseDomainTest {
 
         var newTask = new OpenTextTask("HoleTask", 4);
         var ex = assertThrows(IllegalArgumentException.class, () -> course.addTask(newTask));
-        assertTrue(ex.getMessage().toLowerCase().contains("lacuna") || ex.getMessage().toLowerCase().contains("sequencia") || ex.getMessage().toLowerCase().contains("continua"));
+        assertTrue(ex.getMessage().toLowerCase().contains("lacuna") || ex.getMessage().toLowerCase().contains("sequência") || ex.getMessage().toLowerCase().contains("continua"));
     }
 
     @Test
