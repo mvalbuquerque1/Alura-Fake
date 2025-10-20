@@ -34,7 +34,7 @@ public abstract class Task {
 
     private void validate(String statement, int order) {
         if (statement == null || statement.isBlank())
-            throw new IllegalArgumentException("Enunciado nao pode ser nulo ou vazio");
+            throw new IllegalArgumentException("Enunciado não pode ser nulo ou vazio");
         int length = statement.trim().length();
         if (length < 4 || length > 255)
             throw new IllegalArgumentException("Enunciado deve ter entre 4 e 255 caracteres");
