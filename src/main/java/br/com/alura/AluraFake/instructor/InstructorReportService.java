@@ -6,6 +6,7 @@ import br.com.alura.AluraFake.user.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Service
 public class InstructorReportService {
@@ -27,7 +28,8 @@ public class InstructorReportService {
         }
 
         var courses = courseRepository.findAll().stream()
-                .filter(c -> c.getInstructor().getId().equals(instructorId))
+                // handle cases where User.id may be null in tests by also comparing instance
+                .filter(c -> c.getInstructor() == user || Objects.equals(c.getInstructor().getId(), instructorId))
                 .map(c -> new InstructorCoursesReportDTO(
                         c.getId(),
                         c.getTitle(),
