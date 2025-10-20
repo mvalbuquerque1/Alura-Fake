@@ -7,6 +7,7 @@ import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Entity
@@ -41,17 +42,22 @@ public class Course {
     }
 
     public void addTask(Task newTask) {
-        if (status != Status.BUILDING)
-            throw new IllegalArgumentException("Apenas cursos em construção podem receber tarefas");
-        boolean duplicateStatement = tasks.stream()
-                .anyMatch(t -> t.getStatement().equalsIgnoreCase(newTask.getStatement()));
-        if (duplicateStatement)
-            throw new IllegalArgumentException("Curso já contém uma tarefa com este enunciado");
+        // delegate validations to the validator utility
+        CourseTaskValidator.validateAdd(this, newTask);
+
         int newOrder = newTask.getOrderInCourse();
-        if (newOrder <= 0)
-            throw new IllegalArgumentException("Ordem deve ser positiva");
+
+        // shift existing tasks' orders in reverse to avoid temporary collisions
+        for (int i = tasks.size() - 1; i >= 0; i--) {
+            Task task = tasks.get(i);
+            if (task.getOrderInCourse() >= newOrder) {
+                task.incrementOrder();
+            }
+        }
+
         newTask.attachTo(this);
         tasks.add(newTask);
+        tasks.sort(Comparator.comparingInt(Task::getOrderInCourse));
     }
 
     public Long getId() {
@@ -85,4 +91,9 @@ public class Course {
     public LocalDateTime getPublishedAt() {
         return publishedAt;
     }
+
+    public List<Task> getTasks() {
+        return List.copyOf(tasks);
+    }
+
 }

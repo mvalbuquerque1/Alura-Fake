@@ -42,6 +42,9 @@ public abstract class Task {
             throw new IllegalArgumentException("Ordem deve ser positiva");
     }
 
+    public void incrementOrder() {
+        this.orderInCourse++;
+    }
     public void attachTo(Course c) {
         this.course = c;
     }
