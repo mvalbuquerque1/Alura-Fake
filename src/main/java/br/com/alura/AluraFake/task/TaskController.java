@@ -35,7 +35,7 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("singlechoice")
+    @PostMapping("/singlechoice")
     public ResponseEntity newSingleChoice(@RequestBody @Valid SingleChoiceTaskRequest request) {
         Course course = repository.findById(request.courseId())
                 .orElseThrow(() -> new IllegalArgumentException("Curso não encontrado"));
