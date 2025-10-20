@@ -35,10 +35,12 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @Transactional
     @PostMapping("/singlechoice")
     public ResponseEntity newSingleChoice(@RequestBody @Valid SingleChoiceTaskRequest request) {
         Course course = repository.findById(request.courseId())
                 .orElseThrow(() -> new IllegalArgumentException("Curso não encontrado"));
+        
         validateCourseStatus(course);
 
         List<Option> options = request.options()
@@ -52,9 +54,22 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/task/new/multiplechoice")
-    public ResponseEntity newMultipleChoice() {
-        return ResponseEntity.ok().build();
+    @Transactional
+    @PostMapping("/multiplechoice")
+    public ResponseEntity newMultipleChoice(@RequestBody @Valid MultipleChoiceTaskRequest request) {
+        Course course = repository.findById(request.courseId())
+                .orElseThrow(() -> new IllegalArgumentException("Curso não encontrado"));
+        
+        validateCourseStatus(course);
+        
+        List<Option> options = request.options()
+                .stream()
+                .map(o -> new Option(o.option(), o.isCorrect()))
+                .toList();
+
+        course.addTask(new MultipleChoiceTask(request.statement(), request.order(), options));
+        repository.save(course);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     private static void validateCourseStatus(Course course) {
