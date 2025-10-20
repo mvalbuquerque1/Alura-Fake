@@ -1,10 +1,14 @@
 package br.com.alura.AluraFake.course;
 
+import br.com.alura.AluraFake.task.Task;
 import br.com.alura.AluraFake.user.User;
 import jakarta.persistence.*;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Entity
 public class Course {
@@ -21,8 +25,13 @@ public class Course {
     private Status status;
     private LocalDateTime publishedAt;
 
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderInCourse ASC")
+    private List<Task> tasks = new ArrayList<>();
+
     @Deprecated
-    public Course(){}
+    public Course() {
+    }
 
     public Course(String title, String description, User instructor) {
         Assert.isTrue(instructor.isInstructor(), "Usuario deve ser um instrutor");
@@ -30,6 +39,25 @@ public class Course {
         this.instructor = instructor;
         this.description = description;
         this.status = Status.BUILDING;
+    }
+
+    public void addTask(Task newTask) {
+        // delegate validations to the validator utility
+        CourseTaskValidator.validateAdd(this, newTask);
+
+        int newOrder = newTask.getOrderInCourse();
+
+        // shift existing tasks' orders in reverse to avoid temporary collisions
+        for (int i = tasks.size() - 1; i >= 0; i--) {
+            Task task = tasks.get(i);
+            if (task.getOrderInCourse() >= newOrder) {
+                task.incrementOrder();
+            }
+        }
+
+        newTask.attachTo(this);
+        tasks.add(newTask);
+        tasks.sort(Comparator.comparingInt(Task::getOrderInCourse));
     }
 
     public Long getId() {
@@ -63,4 +91,9 @@ public class Course {
     public LocalDateTime getPublishedAt() {
         return publishedAt;
     }
+
+    public List<Task> getTasks() {
+        return List.copyOf(tasks);
+    }
+
 }
