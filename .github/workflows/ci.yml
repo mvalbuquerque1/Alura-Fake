@@ -14,6 +14,20 @@ jobs:
       matrix:
         java-version: [21]
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: alurafake_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,8 +39,23 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
 
+      - name: Wait for MySQL
+        # Wait until MySQL service accepts TCP connections
+        run: |
+          for i in {1..60}; do
+            bash -c "echo > /dev/tcp/127.0.0.1/3306" >/dev/null 2>&1 && break || sleep 1
+          done
+
       - name: Run Maven tests
-        run: ./mvnw -B test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/alurafake_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+        run: |
+          ./mvnw -B test \
+            -Dspring.datasource.url="$SPRING_DATASOURCE_URL" \
+            -Dspring.datasource.username="$SPRING_DATASOURCE_USERNAME" \
+            -Dspring.datasource.password="$SPRING_DATASOURCE_PASSWORD"
 
       - name: Upload test reports
         if: always()
@@ -34,4 +63,3 @@ jobs:
         with:
           name: surefire-reports
           path: target/surefire-reports/*.xml
-
