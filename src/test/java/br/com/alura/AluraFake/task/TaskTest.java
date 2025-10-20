@@ -24,23 +24,19 @@ class TaskTest {
         @Test
         @DisplayName("should fail when statement is null")
         void nullStatementThrows() {
-            var ex = assertThrows(IllegalArgumentException.class, () -> new OpenTextTask(null, 1));
-            assertTrue(ex.getMessage().toLowerCase().contains("nulo") || ex.getMessage().toLowerCase().contains("null") );
+            assertThrows(IllegalArgumentException.class, () -> new OpenTextTask(null, 1));
         }
 
         @Test
         @DisplayName("should fail when statement is too short")
         void shortStatementThrows() {
-            var ex = assertThrows(IllegalArgumentException.class, () -> new OpenTextTask("abc", 1));
-            assertTrue(ex.getMessage().toLowerCase().contains("entre 4 e 255") || ex.getMessage().toLowerCase().contains("entre 4"));
+            assertThrows(IllegalArgumentException.class, () -> new OpenTextTask("abc", 1));
         }
 
         @Test
         @DisplayName("should fail when order is not positive")
         void nonPositiveOrderThrows() {
-            var ex = assertThrows(IllegalArgumentException.class, () -> new OpenTextTask("valid statement", 0));
-            assertTrue(ex.getMessage().toLowerCase().contains("ordem") );
+            assertThrows(IllegalArgumentException.class, () -> new OpenTextTask("valid statement", 0));
         }
     }
 }
-

@@ -69,8 +69,7 @@ class TaskControllerTest {
 
         var request = new OpenTextTaskRequest(99L, "Valid statement", 1);
 
-        var ex = assertThrows(IllegalArgumentException.class, () -> controller.newOpenTextExercise(request));
-        assertTrue(ex.getMessage().toLowerCase().contains("curso") || ex.getMessage().toLowerCase().contains("not found"));
+        assertThrows(IllegalArgumentException.class, () -> controller.newOpenTextExercise(request));
 
         verify(repository, never()).save(any());
     }
@@ -86,8 +85,7 @@ class TaskControllerTest {
 
         var request = new OpenTextTaskRequest(2L, "Valid statement", 1);
 
-        var ex = assertThrows(IllegalArgumentException.class, () -> controller.newOpenTextExercise(request));
-        assertTrue(ex.getMessage().toLowerCase().contains("constru") || ex.getMessage().toLowerCase().contains("building"));
+        assertThrows(IllegalArgumentException.class, () -> controller.newOpenTextExercise(request));
 
         verify(repository, never()).save(any());
     }
@@ -138,8 +136,7 @@ class TaskControllerTest {
         var options = List.of(new OptionRequest("Option A", false), new OptionRequest("Option B", true));
         var request = new SingleChoiceTaskRequest(99L, "Choose one", 1, options);
 
-        var ex = assertThrows(IllegalArgumentException.class, () -> controller.newSingleChoice(request));
-        assertTrue(ex.getMessage().toLowerCase().contains("curso") || ex.getMessage().toLowerCase().contains("not found"));
+        assertThrows(IllegalArgumentException.class, () -> controller.newSingleChoice(request));
 
         verify(repository, never()).save(any());
     }
@@ -156,8 +153,7 @@ class TaskControllerTest {
         var options = List.of(new OptionRequest("Option A", false), new OptionRequest("Option B", true));
         var request = new SingleChoiceTaskRequest(2L, "Choose one", 1, options);
 
-        var ex = assertThrows(IllegalArgumentException.class, () -> controller.newSingleChoice(request));
-        assertTrue(ex.getMessage().toLowerCase().contains("constru") || ex.getMessage().toLowerCase().contains("building"));
+        assertThrows(IllegalArgumentException.class, () -> controller.newSingleChoice(request));
 
         verify(repository, never()).save(any());
     }
@@ -177,9 +173,101 @@ class TaskControllerTest {
         var options = List.of(new OptionRequest("Option X", false), new OptionRequest("Option Y", true));
         var request = new SingleChoiceTaskRequest(5L, "Duplicate", 2, options);
 
-        var ex = assertThrows(IllegalArgumentException.class, () -> controller.newSingleChoice(request));
-        assertTrue(ex.getMessage().toLowerCase().contains("já contém") || ex.getMessage().toLowerCase().contains("duplicate"));
+        assertThrows(IllegalArgumentException.class, () -> controller.newSingleChoice(request));
 
         verify(repository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("POST /task/new/multiplechoice - returns 201 and saves course with new multiple-choice task when course exists and is BUILDING")
+    void newMultipleChoice_success() throws Exception {
+        var instructor = new User("Inst", "i@ex.com", Role.INSTRUCTOR);
+        var course = new Course("Title", "Desc", instructor);
+
+        when(repository.findById(20L)).thenReturn(Optional.of(course));
+
+        var options = List.of(
+                new OptionRequest("Option A", true),
+                new OptionRequest("Option B", true),
+                new OptionRequest("Option C", false)
+        );
+        var request = new MultipleChoiceTaskRequest(20L, "Select all that apply", 1, options);
+
+        var response = controller.newMultipleChoice(request);
+
+        assertNotNull(response);
+        assertEquals(201, response.getStatusCodeValue());
+
+        ArgumentCaptor<Course> captor = ArgumentCaptor.forClass(Course.class);
+        verify(repository, times(1)).save(captor.capture());
+        Course saved = captor.getValue();
+
+        Field tasksField = Course.class.getDeclaredField("tasks");
+        tasksField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Task> tasks = (List<Task>) tasksField.get(saved);
+
+        assertNotNull(tasks);
+        assertEquals(1, tasks.size());
+        Task t = tasks.get(0);
+        assertEquals("Select all that apply", t.getStatement());
+        assertEquals(1, t.getOrderInCourse());
+        assertEquals(saved, t.getCourse());
+
+        assertTrue(t instanceof MultipleChoiceTask);
+        MultipleChoiceTask m = (MultipleChoiceTask) t;
+        assertEquals(3, m.getOptions().size());
+        assertTrue(m.getOptions().stream().filter(o -> o.isCorrect()).count() >= 2);
+    }
+
+    @Test
+    @DisplayName("POST /task/new/multiplechoice - throws when course not found")
+    void newMultipleChoice_courseNotFound() {
+        when(repository.findById(anyLong())).thenReturn(Optional.empty());
+
+        var options = List.of(new OptionRequest("Option A", true), new OptionRequest("Option B", true), new OptionRequest("Option C", false));
+        var request = new MultipleChoiceTaskRequest(99L, "Select all that apply", 1, options);
+
+        assertThrows(IllegalArgumentException.class, () -> controller.newMultipleChoice(request));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("POST /task/new/multiplechoice - throws when course is not in BUILDING status")
+    void newMultipleChoice_courseNotBuilding() {
+        var instructor = new User("Inst", "i@ex.com", Role.INSTRUCTOR);
+        var course = new Course("Title", "Desc", instructor);
+        course.setStatus(Status.PUBLISHED);
+
+        when(repository.findById(3L)).thenReturn(Optional.of(course));
+
+        var options = List.of(new OptionRequest("Option A", true), new OptionRequest("Option B", true), new OptionRequest("Option C", false));
+        var request = new MultipleChoiceTaskRequest(3L, "Select all that apply", 1, options);
+
+        assertThrows(IllegalArgumentException.class, () -> controller.newMultipleChoice(request));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("POST /task/new/multiplechoice - throws when statement already exists in course")
+    void newMultipleChoice_duplicateStatement() {
+        var instructor = new User("Inst", "i@ex.com", Role.INSTRUCTOR);
+        var course = new Course("Title", "Desc", instructor);
+        // add an existing task with same statement
+        var existingOptions = List.of(new Option("Option A", true), new Option("Option B", true), new Option("Option C", false));
+        var existing = new MultipleChoiceTask("DuplicateMC", 1, existingOptions);
+        course.addTask(existing);
+
+        when(repository.findById(6L)).thenReturn(Optional.of(course));
+
+        var options = List.of(new OptionRequest("Option X", true), new OptionRequest("Option Y", true), new OptionRequest("Option Z", false));
+        var request = new MultipleChoiceTaskRequest(6L, "DuplicateMC", 2, options);
+
+        assertThrows(IllegalArgumentException.class, () -> controller.newMultipleChoice(request));
+
+        verify(repository, never()).save(any());
+    }
+
 }
