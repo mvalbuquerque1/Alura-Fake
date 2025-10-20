@@ -41,7 +41,7 @@ public class MultipleChoiceTask extends Task {
 
         Set<String> texts = options.stream().map(Option::getText).map(String::toLowerCase).collect(Collectors.toSet());
         if (texts.size() != options.size())
-            throw new IllegalArgumentException("As alternativas não podem ser iguais entre si");
+            throw new IllegalArgumentException("As alternativas não podem ser iguais entre si.");
 
 
         if (texts.contains(statement.toLowerCase()))
