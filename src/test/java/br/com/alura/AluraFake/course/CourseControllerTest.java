@@ -1,6 +1,7 @@
 package br.com.alura.AluraFake.course;
 
 import br.com.alura.AluraFake.user.*;
+import br.com.alura.AluraFake.task.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,6 +110,67 @@ class CourseControllerTest {
                 .andExpect(jsonPath("$[1].description").value("Curso de hibernate"))
                 .andExpect(jsonPath("$[2].title").value("Spring"))
                 .andExpect(jsonPath("$[2].description").value("Curso de spring"));
+    }
+
+    @Test
+    void publish__should_publish_course_when_valid() throws Exception {
+        User paulo = new User("Paulo", "paulo@alua.com.br", Role.INSTRUCTOR);
+        Course course = new Course("Java", "Curso de java", paulo);
+
+        // create tasks with correct orders and types
+        OpenTextTask open = new OpenTextTask("Enunciado aberto", 1);
+
+        List<Option> singleOptions = Arrays.asList(
+                new Option("Opção A", false),
+                new Option("Opção B", true)
+        );
+        SingleChoiceTask single = new SingleChoiceTask("Enunciado single", 2, singleOptions);
+
+        List<Option> multiOptions = Arrays.asList(
+                new Option("Opção 1", true),
+                new Option("Opção 2", true),
+                new Option("Opção 3", false)
+        );
+        MultipleChoiceTask multi = new MultipleChoiceTask("Enunciado múltipla", 3, multiOptions);
+
+        // attach tasks to course using addTask to respect validation
+        course.addTask(open);
+        course.addTask(single);
+        course.addTask(multi);
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        mockMvc.perform(post("/course/1/publish")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(courseRepository, times(1)).save(any(Course.class));
+    }
+
+    @Test
+    void publish__should_return_internal_server_error_when_course_invalid() throws Exception {
+        User paulo = new User("Paulo", "paulo@alua.com.br", Role.INSTRUCTOR);
+        Course course = new Course("Java", "Curso de java", paulo);
+
+        // Only add two types (missing MultipleChoiceTask)
+        OpenTextTask open = new OpenTextTask("Enunciado aberto", 1);
+
+        List<Option> singleOptions = Arrays.asList(
+                new Option("Opção A", false),
+                new Option("Opção B", true)
+        );
+        SingleChoiceTask single = new SingleChoiceTask("Enunciado single", 2, singleOptions);
+
+        course.addTask(open);
+        course.addTask(single);
+
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+
+        mockMvc.perform(post("/course/2/publish")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
+
+        verify(courseRepository, times(0)).save(any(Course.class));
     }
 
 }
