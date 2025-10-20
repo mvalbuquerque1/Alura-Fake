@@ -84,7 +84,6 @@ public class Course {
             throw new IllegalArgumentException("Curso deve conter ao menos uma tarefa de cada tipo para ser publicado");
 
         var orders = tasks.stream().map(Task::getOrderInCourse).sorted().toList();
-        if (orders.isEmpty()) throw new IllegalArgumentException("Tarefas não podem estar vazias");
         for (int i = 0; i < orders.size(); i++) {
             int expected = i + 1;
             if (orders.get(i) != expected)
